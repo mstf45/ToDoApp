@@ -1,25 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:todoapp/custom_keys/keys.dart';
+import 'package:provider/provider.dart';
 import 'package:todoapp/pages/home.dart';
+import 'package:todoapp/providers/todo_provider.dart';
+import 'package:todoapp/services/todo_service.dart';
+import 'package:todoapp/theme/app_theme.dart';
 
 void main() async {
-  await Hive.initFlutter();
-  var box = await Hive.openBox(CustomKeys.myBoxName);
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  final todoService = TodoService();
+  await todoService.init();
+  runApp(MyApp(todoService: todoService));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final TodoService todoService;
+
+  const MyApp({required this.todoService, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return  MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-          useMaterial3: true
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => TodoProvider(todoService)..loadTodos(),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Todo App',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.dark,
+        home: const HomePage(),
       ),
-      home: HomePage(),
     );
   }
 }
