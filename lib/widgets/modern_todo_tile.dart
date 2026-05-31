@@ -45,20 +45,30 @@ class ModernTodoTile extends StatelessWidget {
             ),
           ],
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceLight,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: todo.isCompleted
-                  ? AppTheme.primaryColor.withOpacity(0.3)
-                  : Colors.transparent,
-              width: 1,
-            ),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: GestureDetector(
+        child: _buildTileContent(context),
+      ),
+    );
+  }
+
+  Widget _buildTileContent(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: todo.isCompleted
+              ? AppTheme.primaryColor.withValues(alpha: 0.3)
+              : Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Checkbox
+            GestureDetector(
               onTap: () => context.read<TodoProvider>().toggleTodo(todo.id),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
@@ -81,60 +91,105 @@ class ModernTodoTile extends StatelessWidget {
                     : null,
               ),
             ),
-            title: Text(
-              todo.title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-                decoration: todo.isCompleted
-                    ? TextDecoration.lineThrough
-                    : TextDecoration.none,
-                decorationColor: Colors.white54,
-              ),
-            ),
-            subtitle: todo.description.isNotEmpty
-                ? Text(
-                    todo.description,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            const SizedBox(width: 14),
+            // Title ve Description
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    todo.title,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white38,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
                       decoration: todo.isCompleted
                           ? TextDecoration.lineThrough
                           : TextDecoration.none,
+                      decorationColor: Colors.white54,
                     ),
-                  )
-                : null,
-            trailing: PopupMenuButton(
-              color: AppTheme.surfaceDark,
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  onTap: () => _editTodo(context),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.edit, color: AppTheme.primaryColor, size: 18),
-                      SizedBox(width: 8),
-                      Text(AppStrings.edit, style: TextStyle(color: Colors.white)),
-                    ],
                   ),
-                ),
-                PopupMenuItem(
-                  onTap: () => _deleteTodo(context),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.delete, color: AppTheme.errorColor, size: 18),
-                      SizedBox(width: 8),
-                      Text(AppStrings.delete, style: TextStyle(color: Colors.white)),
-                    ],
-                  ),
-                ),
-              ],
+                  if (todo.description.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      todo.description,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white38,
+                        decoration: todo.isCompleted
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
+            const SizedBox(width: 10),
+            // Menu Button
+            GestureDetector(
+              onTap: () => _showMenu(context),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.more_vert,
+                  size: 18,
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surfaceDark,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit, color: AppTheme.primaryColor),
+              title: const Text(
+                AppStrings.edit,
+                style: TextStyle(color: Colors.white),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _editTodo(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: AppTheme.errorColor),
+              title: const Text(
+                AppStrings.delete,
+                style: TextStyle(color: Colors.white),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteTodo(context);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -157,7 +212,10 @@ class ModernTodoTile extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(AppStrings.cancel, style: TextStyle(color: Colors.white70)),
+            child: const Text(
+              AppStrings.cancel,
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -167,7 +225,10 @@ class ModernTodoTile extends StatelessWidget {
                 const SnackBar(content: Text(AppStrings.taskDeleted)),
               );
             },
-            child: const Text(AppStrings.delete, style: TextStyle(color: AppTheme.errorColor)),
+            child: const Text(
+              AppStrings.delete,
+              style: TextStyle(color: AppTheme.errorColor),
+            ),
           ),
         ],
       ),
