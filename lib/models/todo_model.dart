@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Todo {
   final String id;
   final String title;
@@ -60,4 +62,40 @@ class Todo {
   String toJson() => jsonEncode(toMap());
 
   factory Todo.fromJson(String source) => Todo.fromMap(jsonDecode(source));
+
+  static bool isLegacyEncryptedFormat(Map<String, dynamic> data) {
+    return data.containsKey('ciphertext') ||
+        data.containsKey('payload') ||
+        (data.containsKey('nonce') && !data.containsKey('title'));
+  }
+
+  factory Todo.fromFirestore(Map<String, dynamic> data) {
+    if (isLegacyEncryptedFormat(data)) {
+      throw FormatException('Legacy encrypted todo format is no longer supported.');
+    }
+    return Todo(
+      id: data['id'] ?? '',
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      isCompleted: data['isCompleted'] ?? false,
+      createdAt: data['createdAt'] is String
+          ? DateTime.parse(data['createdAt'])
+          : (data['createdAt'] as Timestamp).toDate(),
+      updatedAt: data['updatedAt'] is String
+          ? DateTime.parse(data['updatedAt'])
+          : (data['updatedAt'] != null ? (data['updatedAt'] as Timestamp).toDate() : null),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'isCompleted': isCompleted,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'sortIndex': 0, // Will be set by service
+    };
+  }
 }

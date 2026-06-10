@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:todoapp/constants/app_strings.dart';
 import 'package:todoapp/dialogs/add_edit_todo_dialog.dart';
+import 'package:todoapp/providers/auth_provider.dart';
 import 'package:todoapp/providers/todo_provider.dart';
 import 'package:todoapp/theme/app_theme.dart';
 import 'package:todoapp/widgets/modern_todo_tile.dart';
@@ -17,11 +18,23 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late ScrollController _scrollController;
+  bool _hasLoadedTodos = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasLoadedTodos) {
+      _hasLoadedTodos = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<TodoProvider>().loadTodos();
+      });
+    }
   }
 
   @override
@@ -34,17 +47,31 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
-      body: Consumer<TodoProvider>(
-        builder: (context, todoProvider, child) {
+      body: Consumer2<AuthProvider, TodoProvider>(
+        builder: (context, authProvider, todoProvider, child) {
           return CustomScrollView(
             controller: _scrollController,
             slivers: [
-              _buildAppBar(context, todoProvider),
-              if (!todoProvider.isEmpty) _buildStatsBar(todoProvider),
-              if (!todoProvider.isEmpty)
+              _buildAppBar(context, authProvider, todoProvider),
+              if (todoProvider.isLoading)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                )
+              else if (!todoProvider.isEmpty) ...[
+                _buildStatsBar(todoProvider),
                 SliverReorderableList(
-                  onReorder: (oldIndex, newIndex) {
-                    todoProvider.reorderTodos(oldIndex, newIndex);
+                  onReorder: (oldIndex, newIndex) async {
+                    final ok =
+                        await todoProvider.reorderTodos(oldIndex, newIndex);
+                    if (!ok) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text(AppStrings.saveFailed)),
+                      );
+                    }
                   },
                   itemBuilder: (context, index) {
                     final todo = todoProvider.todos[index];
@@ -55,8 +82,8 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                   itemCount: todoProvider.todos.length,
-                )
-              else
+                ),
+              ] else
                 SliverFillRemaining(
                   child: _buildEmptyState(context),
                 ),
@@ -72,14 +99,20 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  SliverAppBar _buildAppBar(BuildContext context, TodoProvider todoProvider) {
+  SliverAppBar _buildAppBar(
+    BuildContext context,
+    AuthProvider authProvider,
+    TodoProvider todoProvider,
+  ) {
     return SliverAppBar(
       backgroundColor: AppTheme.bgDark,
       elevation: 0,
       floating: true,
       pinned: false,
+      toolbarHeight: 80,
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             AppStrings.todayTasks,
@@ -87,8 +120,17 @@ class _HomePageState extends State<HomePage> {
           ),
           const SizedBox(height: 2),
           Text(
+            authProvider.user?.displayName ?? authProvider.user?.email ?? '',
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.white70,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
             '${todoProvider.totalCount} ${AppStrings.task}',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
               color: Colors.white54,
               fontWeight: FontWeight.w400,
@@ -96,32 +138,36 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+      titleSpacing: 16,
       actions: [
         if (!todoProvider.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Center(
-              child: PopupMenuButton(
-                color: AppTheme.surfaceDark,
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    onTap: () => _showDeleteAllDialog(context, todoProvider),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.delete_outline,
-                            color: AppTheme.errorColor, size: 18),
-                        SizedBox(width: 8),
-                        Text(AppStrings.deleteAllTasks,
-                            style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                ],
-                icon: const Icon(Icons.more_vert),
+          PopupMenuButton(
+            color: AppTheme.surfaceDark,
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                onTap: () => _showDeleteAllDialog(context, todoProvider),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.delete_outline,
+                        color: AppTheme.errorColor, size: 18),
+                    SizedBox(width: 8),
+                    Text(AppStrings.deleteAllTasks,
+                        style: TextStyle(color: Colors.white)),
+                  ],
+                ),
               ),
-            ),
+            ],
+            icon: const Icon(Icons.more_vert),
           ),
+        IconButton(
+          onPressed: () {
+            authProvider.signOut();
+            todoProvider.clearTodos();
+          },
+          icon: const Icon(Icons.logout),
+          tooltip: AppStrings.logout,
+        ),
       ],
     );
   }
@@ -196,7 +242,7 @@ class _HomePageState extends State<HomePage> {
                 ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             AppStrings.addFirstTask,
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -216,8 +262,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showDeleteAllDialog(
-      BuildContext context, TodoProvider todoProvider) {
+  void _showDeleteAllDialog(BuildContext context, TodoProvider todoProvider) {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
@@ -230,11 +275,14 @@ class _HomePageState extends State<HomePage> {
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
-            onPressed: () {
-              todoProvider.deleteAllTodos();
+            onPressed: () async {
+              final ok = await todoProvider.deleteAllTodos();
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text(AppStrings.allTasksDeleted)),
+                SnackBar(
+                    content: Text(ok
+                        ? AppStrings.allTasksDeleted
+                        : AppStrings.saveFailed)),
               );
             },
             child: const Text(AppStrings.delete),

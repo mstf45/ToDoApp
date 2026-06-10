@@ -7,6 +7,8 @@ import 'package:todoapp/models/todo_model.dart';
 import 'package:todoapp/providers/todo_provider.dart';
 import 'package:todoapp/theme/app_theme.dart';
 
+import 'package:flutter/cupertino.dart';
+
 class ModernTodoTile extends StatelessWidget {
   final Todo todo;
 
@@ -59,7 +61,7 @@ class ModernTodoTile extends StatelessWidget {
           color: todo.isCompleted
               ? AppTheme.primaryColor.withValues(alpha: 0.3)
               : Colors.transparent,
-          width: 1,
+          width: 3,
         ),
       ),
       child: Padding(
@@ -69,7 +71,15 @@ class ModernTodoTile extends StatelessWidget {
           children: [
             // Checkbox
             GestureDetector(
-              onTap: () => context.read<TodoProvider>().toggleTodo(todo.id),
+              onTap: () async {
+                final ok =
+                    await context.read<TodoProvider>().toggleTodo(todo.id);
+                if (!ok) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text(AppStrings.saveFailed)),
+                  );
+                }
+              },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 width: 28,
@@ -100,13 +110,10 @@ class ModernTodoTile extends StatelessWidget {
                 children: [
                   Text(
                     todo.title,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
-                      decoration: todo.isCompleted
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
                       decorationColor: Colors.white54,
                     ),
                   ),
@@ -116,12 +123,9 @@ class ModernTodoTile extends StatelessWidget {
                       todo.description,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         color: Colors.white38,
-                        decoration: todo.isCompleted
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
                       ),
                     ),
                   ],
@@ -163,7 +167,9 @@ class ModernTodoTile extends StatelessWidget {
         ),
       ),
       builder: (context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewPadding.bottom,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -203,32 +209,28 @@ class ModernTodoTile extends StatelessWidget {
   }
 
   void _deleteTodo(BuildContext context) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceDark,
+      builder: (context) => CupertinoAlertDialog(
         title: const Text(AppStrings.deleteTask),
         content: const Text(AppStrings.confirmDelete),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              AppStrings.cancel,
-              style: TextStyle(color: Colors.white70),
-            ),
+            child: const Text(AppStrings.cancel),
           ),
-          TextButton(
-            onPressed: () {
-              context.read<TodoProvider>().deleteTodo(todo.id);
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () async {
+              final ok = await context.read<TodoProvider>().deleteTodo(todo.id);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text(AppStrings.taskDeleted)),
+                SnackBar(
+                    content: Text(
+                        ok ? AppStrings.taskDeleted : AppStrings.saveFailed)),
               );
             },
-            child: const Text(
-              AppStrings.delete,
-              style: TextStyle(color: AppTheme.errorColor),
-            ),
+            child: const Text(AppStrings.delete),
           ),
         ],
       ),

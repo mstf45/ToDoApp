@@ -4,6 +4,27 @@ final class AppStrings {
   // App
   static const String appTitle = 'Todo App';
 
+  // Auth
+  static const String loginSubtitle =
+      'Notlarınızı her cihazda güvenli şekilde eşitleyin.';
+  static const String login = 'Giriş Yap';
+  static const String signUp = 'Kaydol';
+  static const String name = 'İsim';
+  static const String email = 'E-posta';
+  static const String password = 'Parola';
+    static const String confirmPassword = 'Parolayı Onayla';
+  static const String passphraseHint = 'Şifreleme Parolası';
+    static const String confirmPassphrase = 'Şifrelemeyi Onayla';
+    static const String username = 'Kullanıcı Adı';
+    static const String passwordsDoNotMatch = 'Parolalar eşleşmiyor.';
+    static const String passphrasesDoNotMatch = 'Şifreleme parolaları eşleşmiyor.';
+  static const String continueWithGoogle = 'Google ile devam et';
+  static const String orContinue = 'Veya şu seçeneklerle devam edin';
+  static const String fillAllFields = 'Lütfen tüm alanları doldurun.';
+  static const String enterPassphraseForGoogle =
+      'Google için şifreleme parolasını girin.';
+  static const String logout = 'Çıkış Yap';
+
   // Home Page
   static const String todayTasks = 'Bugünün Görevleri';
   static const String task = 'görev';
@@ -28,15 +49,21 @@ final class AppStrings {
   static const String edit = 'Düzenle';
   static const String delete = 'Sil';
   static const String deleteTask = 'Notu Sil';
-  static const String confirmDelete = 'Bu notu silmek istediğinizden emin misiniz?';
+  static const String confirmDelete =
+      'Bu notu silmek istediğinizden emin misiniz?';
   static const String taskDeleted = 'Not silindi';
 
   // Empty State
   static const String noTasks = 'Henüz Göreviniz Yok';
-  static const String addFirstTask = 'Yeni bir görev eklemek için + tuşuna tıklayın';
+  static const String addFirstTask =
+      'Yeni bir görev eklemek için + tuşuna tıklayın';
 
   // Delete All
   static const String deleteAllTasks = 'Tüm Görevleri Sil';
-  static const String confirmDeleteAll = 'Tüm görevleri silmek istediğinizden emin misiniz?';
+  static const String confirmDeleteAll =
+      'Tüm görevleri silmek istediğinizden emin misiniz?';
   static const String allTasksDeleted = 'Tüm görevler silindi';
+
+  // Generic
+  static const String saveFailed = 'İşlem başarısız oldu';
 }

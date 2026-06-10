@@ -100,7 +100,7 @@ class _AddEditTodoDialogState extends State<AddEditTodoDialog> {
     );
   }
 
-  void _saveTask() {
+  void _saveTask() async {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text(AppStrings.emptyTitleError)),
@@ -109,14 +109,15 @@ class _AddEditTodoDialogState extends State<AddEditTodoDialog> {
     }
 
     final provider = context.read<TodoProvider>();
+    bool ok = true;
 
     if (widget.todo == null) {
-      provider.addTodo(
+      ok = await provider.addTodo(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
       );
     } else {
-      provider.updateTodo(
+      ok = await provider.updateTodo(
         id: widget.todo!.id,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -124,5 +125,11 @@ class _AddEditTodoDialogState extends State<AddEditTodoDialog> {
     }
 
     Navigator.pop(context);
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.saveFailed)),
+      );
+    }
   }
 }

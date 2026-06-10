@@ -8,14 +8,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todoapp/main.dart';
-import 'package:todoapp/services/todo_service.dart';
+import 'package:todoapp/services/auth_service.dart';
 
 void main() {
   testWidgets('Todo app smoke test', (WidgetTester tester) async {
-    final todoService = TodoService();
-    await todoService.init();
+    final authService = AuthService();
 
-    await tester.pumpWidget(MyApp(todoService: todoService));
+    await tester.pumpWidget(
+      MyApp(
+        authService: authService,
+      ),
+    );
 
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.add), findsWidgets);
