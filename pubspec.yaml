@@ -31,17 +31,26 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  shared_preferences: ^2.5.5
-  provider: ^6.1.2
-  lottie: ^3.1.2
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.5.5
+  lottie: ^3.1.2
   flutter_slidable: ^3.1.1
-  intl: ^0.19.0
   uuid: ^4.0.0
-  firebase_core: ^4.9.0
-  firebase_auth: ^6.5.1
-  cloud_firestore: ^6.4.1
-  google_sign_in: ^6.0.0
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.7.0
+  cloud_firestore: ^5.6.12
+  google_sign_in: ^6.3.0
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.7
+  get_it: ^8.0.3
+  # 10.0.2 on pub.dev still applies KGP; this commit removes it.
+  fluttertoast:
+    git:
+      url: https://github.com/ponnamkarthik/FlutterToast.git
+      ref: 04481c8801b9729ca4edd05e044c34a13f772cf1
+  material_ui: ^1.11.0
+  cupertino_ui: ^1.1.6
+  connectivity_plus: ^7.3.2
 
 dev_dependencies:
   flutter_test:

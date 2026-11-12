@@ -1,63 +1,65 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:todoapp/constants/app_strings.dart';
+import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:todoapp/core/theme/app_theme.dart';
+import 'package:todoapp/feature/home/home/cubit/home_cubit.dart';
 import 'package:todoapp/firebase_options.dart';
-import 'package:todoapp/pages/home.dart';
-import 'package:todoapp/pages/login_page.dart';
-import 'package:todoapp/providers/auth_provider.dart';
-import 'package:todoapp/providers/todo_provider.dart';
-import 'package:todoapp/services/auth_service.dart';
-import 'package:todoapp/services/todo_service.dart';
-import 'package:todoapp/theme/app_theme.dart';
+import 'package:todoapp/product/application/session_cubit.dart';
+import 'package:todoapp/product/application/theme_cubit.dart';
+import 'package:todoapp/product/application/theme_state.dart';
+import 'package:todoapp/product/constants/app_strings.dart';
+import 'package:todoapp/product/constants/app_theme_mode.dart';
+import 'package:todoapp/product/container/product_container.dart';
+import 'package:todoapp/product/environment/app_environment.dart';
+import 'package:todoapp/product/logger/app_logger.dart';
+import 'package:todoapp/product/logger/product_bloc_observer.dart';
+import 'package:todoapp/product/service/todo_service.dart';
+import 'package:todoapp/product/widget/auth_gate.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kDebugMode) {
+    Bloc.observer = const ProductBlocObserver();
+  }
+  AppLogger.info('starting flavor=${AppEnvironment.flavorName}');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  final authService = AuthService();
-
-  runApp(MyApp(
-    authService: authService,
-  ));
+  await ProductContainer.setup();
+  AppLogger.info('ready flavor=${AppEnvironment.flavorName}');
+  runApp(const TodoApp());
 }
 
-class MyApp extends StatelessWidget {
-  final AuthService authService;
-
-  const MyApp({
-    required this.authService,
-    super.key,
-  });
+final class TodoApp extends StatelessWidget {
+  const TodoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return MultiBlocProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider(authService),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => TodoProvider(TodoService(authService)),
+        BlocProvider<SessionCubit>.value(value: ProductContainer.read<SessionCubit>()),
+        BlocProvider<ThemeCubit>.value(value: ProductContainer.read<ThemeCubit>()),
+        BlocProvider<HomeCubit>(
+          create: (_) => HomeCubit(
+            ProductContainer.read<ITodoService>(),
+            ProductContainer.read<SessionCubit>(),
+          ),
         ),
       ],
-      child: Consumer<AuthProvider>(
-        builder: (context, auth, child) {
+      child: BlocSelector<ThemeCubit, ThemeState, AppThemeMode>(
+        selector: (state) => state.mode,
+        builder: (context, mode) {
           return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: AppStrings.appTitle,
+            debugShowCheckedModeBanner: kDebugMode,
+            title: AppEnvironment.windowTitle(AppStrings.appTitle),
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.dark,
-            home: auth.isLoading
-                ? const Scaffold(
-                    body: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                : auth.isAuthenticated
-                    ? const HomePage()
-                    : const LoginPage(),
+            themeMode: mode == AppThemeMode.light ? ThemeMode.light : ThemeMode.dark,
+            builder: (context, child) {
+              // flutter_slidable still builds legacy Material Icon and Text widgets.
+              // ignore: deprecated_member_use
+              return MaterialUiCompatibilityBridge(child: child!);
+            },
+            home: const AuthGate(),
           );
         },
       ),

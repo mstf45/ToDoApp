@@ -41,3 +41,24 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Generated and local build output
+android/.kotlin/
+android/build/
+**/build/
+
+# Firebase client configuration and project binding.
+# Keep these files on the machine that builds the app.
+lib/firebase_options.dart
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+.firebaserc
+firebase.json
+
+# Credentials and local environment
+.env
+.env.*
+**/*-firebase-adminsdk-*.json
+**/serviceAccount*.json
+*.pem
